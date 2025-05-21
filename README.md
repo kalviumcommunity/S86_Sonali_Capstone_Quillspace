@@ -7,6 +7,7 @@ Users can create rich text posts, upload images, and engage through likes and co
 The platform supports social sharing and full CRUD operations.  
 Ideal for professional blogging, personal journals, and educational publishing.
 
+
 ## ✨ Key Features
 
 ### 📝 Markdown + Rich Text Editor  
@@ -36,14 +37,16 @@ All authenticated routes are protected using **JSON Web Tokens (JWTs)**, ensurin
 ### 📂 Component-Based Architecture  
 Built using **React.js**, with modular and reusable components for scalability and maintainability.
 
-## 🛠️ Tech Stack
 
-Frontend       : React.js, Styled Components  
-Backend        : Node.js, Express.js, Multer  
-Database       : MongoDB (Mongoose)  
-Authentication : Google OAuth, JWT  
-Hosting        : Netlify (Frontend), Render (Backend)  
-APIs           : REST API (CRUD)  
+### 🛠️ Tech Stack
+
+Frontend: React.js, Styled Components
+Backend: Node.js, Express.js, Multer
+Database: MongoDB with Mongoose ODM
+Authentication: Email/Password (JWT), Google OAuth
+Hosting: Netlify (Frontend), Render (Backend)
+API: RESTful APIs supporting full CRUD operations 
+
 
 ## 🗓️ 6-Week Plan (35 Days)
 
