@@ -13,6 +13,15 @@ const storage = multer.diskStorage({
   }
 });
 
+const fileFilter = (req, file, cb) => {
+  const fileTypes = /jpeg|jpg|png/;
+  const extname = fileTypes.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = fileTypes.test(file.mimetype);
+
+  if (extname && mimetype) cb(null, true);
+  else cb("Only images (jpeg, jpg, png) are allowed");
+};
+
 const upload = multer({ storage: storage });
 
 // Upload image route
