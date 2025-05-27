@@ -4,7 +4,7 @@ const PostSchema = new mongoose.Schema({
     title: { type: String, required: true },
     content: String,
     username: { type: String, required: true },
-    categories: [String],
+    categories: String,
     image: String,
     createdAt: { type: Date, default: Date.now }
 });

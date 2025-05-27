@@ -39,4 +39,34 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// PUT: Update user profile
+router.put('/:id', async (req, res) => {
+  try {
+    const { username, email, password } = req.body;
+
+    const updateData = { username, email };
+
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      updateData.password = await bcrypt.hash(password, salt);
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      { $set: updateData },
+      { new: true }
+    );
+
+    if (!updatedUser) return res.status(404).json({ message: 'User not found' });
+    res.status(200).json({ 
+      message: '✅ User updated successfully', 
+      user: { id: updatedUser._id, username: updatedUser.username, email: updatedUser.email }
+    });
+  } catch (error) {
+    res.status(500).json({ message: '❌ Update failed', error: error.message });
+  }
+});
+
 module.exports = router;
+
+
