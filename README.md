@@ -95,5 +95,8 @@ API: RESTful APIs supporting full CRUD operations
 - Day 32: Peer testing and collecting feedback  
 - Day 33: Apply feedback and improve UI/UX accordingly  
 - Day 34: Re-test APIs and frontend for stability and performance  
-- Day 35: Final documentation, project submission, and final GitHub milestone update  
+- Day 35: Final documentation, project submission, and final GitHub milestone update
+
+## frontend deployement link:
+- https://quillspace.netlify.app/
 
