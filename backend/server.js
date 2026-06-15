@@ -23,12 +23,20 @@ app.use(helmet({
 }));
 
 // CORS — restrict to known origins (#4 — was fully open)
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173').split(',');
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173').split(',').map(o => o.trim().replace(/\/$/, ''));
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (curl, Postman, mobile apps)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
+    
+    // Clean origin by removing trailing slash if it exists
+    const cleanOrigin = origin.replace(/\/$/, '');
+    
+    if (allowedOrigins.includes(cleanOrigin)) return callback(null, true);
+    
+    // Fallback for Vercel preview deployments if needed (optional)
+    if (cleanOrigin.endsWith('.vercel.app')) return callback(null, true);
+    
     return callback(new Error(`CORS: origin ${origin} not allowed`));
   },
   credentials: true,
