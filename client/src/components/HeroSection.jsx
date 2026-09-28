@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Button from './Button';
 import { AuthContext } from '../context/AuthContext'; // #42 — use AuthContext not localStorage
 import api from '../services/api';
+import { Sparkles } from 'lucide-react';
 
 const HeroSection = () => {
   const navigate = useNavigate();
@@ -88,7 +89,7 @@ const HeroSection = () => {
       <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         {/* Badge */}
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/30 text-accent text-sm font-semibold mb-6 animate-fade-in">
-          <span>✨</span>
+          <Sparkles className="w-4 h-4 text-accent" />
           <span>The Modern Writers Platform</span>
         </div>
 

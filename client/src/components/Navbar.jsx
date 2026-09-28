@@ -2,7 +2,8 @@ import { useState, useContext, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Button from './Button';
 import { AuthContext } from '../context/AuthContext';
-import { Feather, PenTool, User, LogOut, Settings, Bookmark } from 'lucide-react';
+import { Feather, PenTool, User, LogOut, Settings, Bookmark, Search, Bell } from 'lucide-react';
+import { getImageUrl } from '../utils/image';
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -40,11 +41,11 @@ const Navbar = () => {
 
   return (
     <nav className="fixed top-0 w-full bg-surface border-b border-border z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 sm:h-20">
           {/* Logo */}
           <div
-            className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+            className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0"
             onClick={() => navigate(isLoggedIn ? '/home' : '/')}
           >
             <Feather className="w-6 h-6 sm:w-8 sm:h-8 text-text" />
@@ -66,71 +67,68 @@ const Navbar = () => {
             </div>
           )}
 
-          {/* Search Bar (dashboard only) */}
+          {/* Search Bar (dashboard only - Centered Search Pill) */}
           {isLoggedIn && !showNavLinks && (
-            <div className="hidden md:flex items-center flex-1 mx-8 max-w-md">
+            <div className="hidden md:flex items-center justify-center flex-1 max-w-md mx-6">
               <div className="w-full relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary/60 pointer-events-none" />
                 <input
                   type="text"
-                  placeholder="Search for blogs, writers, topics..."
-                  className="w-full px-4 py-2 bg-card border border-border rounded-xl text-sm text-text placeholder-text-muted focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all duration-200"
+                  placeholder="Search"
+                  defaultValue={new URLSearchParams(location.search).get('search') || ''}
+                  className="w-full pl-11 pr-4 py-2 bg-card/90 border border-border/80 rounded-full text-sm text-text placeholder-text-secondary/60 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all duration-200"
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && e.target.value.trim()) {
-                      navigate(`/home?search=${encodeURIComponent(e.target.value.trim())}`);
+                    if (e.key === 'Enter') {
+                      const query = e.target.value.trim();
+                      navigate(query ? `/home?search=${encodeURIComponent(query)}` : '/home');
                     }
                   }}
                 />
-                <svg
-                  className="absolute right-3 top-2.5 w-4 h-4 text-text-secondary pointer-events-none"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
               </div>
             </div>
           )}
 
           {/* Right Section */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-shrink-0">
             {isLoggedIn && !showNavLinks ? (
               <>
-                {/* Notifications */}
-                <button className="hidden sm:flex p-2 hover:bg-bg/30 rounded-lg transition-colors relative items-center justify-center">
-                  <svg className="w-5 h-5 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                    />
-                  </svg>
-                </button>
-
                 {/* Write Button */}
                 <Button
                   variant="primary"
                   size="sm"
                   onClick={() => navigate('/create')}
-                  className="hidden sm:inline-flex gap-2"
+                  className="hidden sm:inline-flex items-center gap-2"
                 >
                   <PenTool className="w-4 h-4" /> Write
                 </Button>
+
+                {/* Notifications Button */}
+                <button
+                  className="p-2 hover:bg-bg/40 text-text-secondary hover:text-text rounded-full transition-colors relative flex items-center justify-center"
+                  title="Notifications"
+                >
+                  <Bell className="w-5 h-5" />
+                </button>
 
                 {/* Profile Dropdown */}
                 <div className="relative" ref={profileMenuRef}>
                   <button
                     onClick={() => setShowProfileMenu(!showProfileMenu)}
-                    className="w-10 h-10 rounded-full bg-accent/30 flex items-center justify-center text-sm font-bold text-accent hover:bg-accent/40 transition-colors"
+                    className="w-10 h-10 rounded-full bg-accent/30 border border-accent/40 flex items-center justify-center text-sm font-bold text-accent hover:bg-accent/40 transition-colors overflow-hidden"
                     title={user?.username}
                   >
-                    {user?.username?.charAt(0).toUpperCase() || 'U'}
+                    {user?.profileImage ? (
+                      <img
+                        src={getImageUrl(user.profileImage)}
+                        alt={user.username}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      user?.username?.charAt(0).toUpperCase() || 'U'
+                    )}
                   </button>
 
                   {showProfileMenu && (

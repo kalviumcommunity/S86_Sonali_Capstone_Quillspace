@@ -1,10 +1,12 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import CoverImage from '../components/CoverImage';
+import ImageCropModal from '../components/ImageCropModal';
+import ImageAdjustModal from '../components/ImageAdjustModal';
 import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
-import { getImageUrl } from '../utils/image';
-import { Edit3, PenTool, Upload, Send, FileText, Check } from 'lucide-react';
+import { Edit3, PenTool, Upload, Send, FileText, Check, Loader2, Crop, Sliders, Trash2 } from 'lucide-react';
 import MDEditor from '@uiw/react-md-editor';
 
 const CreatePost = () => {
@@ -12,17 +14,21 @@ const CreatePost = () => {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
   const isEditing = !!postId;
+  const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
     title: '',
     content: '',
     tags: '',
     coverImage: '',
+    coverImageSettings: { zoom: 1, x: 50, y: 50, fit: 'contain' },
     status: 'published',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [imageUploading, setImageUploading] = useState(false);
+  const [isCropModalOpen, setIsCropModalOpen] = useState(false);
+  const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
 
   // Load existing post data if editing
   useEffect(() => {
@@ -47,14 +53,15 @@ const CreatePost = () => {
         content: post.content || '',
         tags: post.tags?.join(', ') || '',
         coverImage: post.coverImage || '',
+        coverImageSettings: post.coverImageSettings || { zoom: 1, x: 50, y: 50, fit: 'contain' },
         status: post.status || 'published',
       });
     } catch (err) {
-      // #31 — use proper error message extraction
-      const msg = err.response?.data?.message
-        || err.response?.data?.errors?.[0]?.msg
-        || err.message
-        || 'Failed to load post';
+      const msg =
+        err.response?.data?.message ||
+        err.response?.data?.errors?.[0]?.msg ||
+        err.message ||
+        'Failed to load post';
       setError(msg);
     }
   };
@@ -65,37 +72,61 @@ const CreatePost = () => {
   };
 
   const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
 
-    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-    if (!validTypes.includes(file.type)) {
-      setError('Invalid image type. Please use JPEG, PNG, WebP, or GIF.');
+    // Accepted formats: JPG, JPEG, PNG, WEBP
+    const validExtensions = /\.(jpe?g|png|webp)$/i;
+    const validMimes = /^image\/(jpe?g|png|webp)$/i;
+
+    const isExtValid = validExtensions.test(file.name);
+    const isMimeValid = validMimes.test(file.type);
+
+    if (!isExtValid && !isMimeValid) {
+      setError('Invalid image format. Supported formats: JPG, JPEG, PNG, WEBP.');
+      e.target.value = '';
       return;
     }
+
     if (file.size > 5 * 1024 * 1024) {
-      setError('Image too large. Maximum size is 5MB.');
+      setError('Image is too large. Maximum allowed size is 5MB.');
+      e.target.value = '';
       return;
     }
 
     setImageUploading(true);
     setError('');
+
     try {
       const formDataImg = new FormData();
       formDataImg.append('image', file);
+
       const res = await api.post('/upload', formDataImg, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
-      setFormData((prev) => ({ ...prev, coverImage: res.data.data.url }));
+
+      const uploadedUrl = res.data?.data?.imageUrl || res.data?.data?.url;
+      if (uploadedUrl) {
+        setFormData((prev) => ({
+          ...prev,
+          coverImage: uploadedUrl,
+          coverImageSettings: { zoom: 1, x: 50, y: 50, fit: 'contain' },
+        }));
+      } else {
+        throw new Error('Upload succeeded but no image URL was returned.');
+      }
     } catch (err) {
-      // #31 — extract server message first
-      const msg = err.response?.data?.message
-        || err.response?.data?.errors?.[0]?.msg
-        || err.message
-        || 'Image upload failed';
+      const msg =
+        err.response?.data?.message ||
+        err.response?.data?.errors?.[0]?.msg ||
+        err.message ||
+        'Image upload failed';
       setError(msg);
     } finally {
       setImageUploading(false);
+      e.target.value = '';
     }
   };
 
@@ -129,6 +160,7 @@ const CreatePost = () => {
           ? formData.tags.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean)
           : [],
         coverImage: formData.coverImage,
+        coverImageSettings: formData.coverImageSettings,
         status: submitStatus || formData.status,
       };
 
@@ -142,13 +174,13 @@ const CreatePost = () => {
       const savedPost = res.data.data.post;
       navigate(`/post/${savedPost.slug}`);
     } catch (err) {
-      // #31 — proper server error extraction
       const serverErrors = err.response?.data?.errors;
-      const msg = serverErrors && serverErrors.length > 0
-        ? serverErrors.map((e) => e.msg).join('; ')
-        : err.response?.data?.message
-        || err.message
-        || (isEditing ? 'Failed to update post' : 'Failed to create post');
+      const msg =
+        serverErrors && serverErrors.length > 0
+          ? serverErrors.map((e) => e.msg).join('; ')
+          : err.response?.data?.message ||
+            err.message ||
+            (isEditing ? 'Failed to update post' : 'Failed to create post');
       setError(msg);
     } finally {
       setIsLoading(false);
@@ -159,12 +191,19 @@ const CreatePost = () => {
     <div className="min-h-screen bg-bg text-text">
       <Navbar />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
-
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-text flex items-center">
-              {isEditing ? <><Edit3 className="w-8 h-8 mr-3" /> Edit Post</> : <><PenTool className="w-8 h-8 mr-3" /> Create Post</>}
+              {isEditing ? (
+                <>
+                  <Edit3 className="w-8 h-8 mr-3" /> Edit Post
+                </>
+              ) : (
+                <>
+                  <PenTool className="w-8 h-8 mr-3" /> Create Post
+                </>
+              )}
             </h1>
             <p className="text-text-secondary mt-1">
               {isEditing ? 'Update your article' : 'Share your ideas with the community'}
@@ -208,7 +247,7 @@ const CreatePost = () => {
               {/* Cover Image */}
               <div>
                 <label className="block text-sm font-semibold text-text mb-2">Cover Image</label>
-                <div className="flex gap-3">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <input
                     type="text"
                     name="coverImage"
@@ -217,30 +256,125 @@ const CreatePost = () => {
                     placeholder="https://example.com/image.jpg or upload below"
                     className="flex-1 px-4 py-3 bg-surface border border-border rounded-xl text-text placeholder-text-secondary/50 focus:outline-none focus:border-accent transition-colors text-sm"
                   />
-                  <label className="flex items-center px-4 py-3 bg-surface border border-border rounded-xl text-text-secondary hover:text-accent hover:border-accent transition-colors cursor-pointer text-sm whitespace-nowrap">
-                    {imageUploading ? 'Uploading...' : <><Upload className="w-4 h-4 mr-2" /> Upload</>}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
+                  <input
+                    ref={fileInputRef}
+                    id="coverImageFileInput"
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                    disabled={imageUploading}
+                  />
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
                       disabled={imageUploading}
-                    />
-                  </label>
+                      className="flex items-center px-4 py-3 bg-surface border border-border rounded-xl text-text-secondary hover:text-accent hover:border-accent transition-colors cursor-pointer text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {imageUploading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin text-accent" /> Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4 mr-2" />
+                          {formData.coverImage ? 'Change' : 'Upload'}
+                        </>
+                      )}
+                    </button>
+
+                    {formData.coverImage && (
+                      <>
+                        {/* CROP BUTTON */}
+                        <button
+                          type="button"
+                          onClick={() => setIsCropModalOpen(true)}
+                          disabled={imageUploading}
+                          className="flex items-center px-4 py-3 bg-surface border border-border rounded-xl text-text-secondary hover:text-accent hover:border-accent transition-colors text-sm whitespace-nowrap"
+                          title="Select an area to crop the actual image"
+                        >
+                          <Crop className="w-4 h-4 mr-2 text-accent" />
+                          Crop
+                        </button>
+
+                        {/* ADJUST BUTTON */}
+                        <button
+                          type="button"
+                          onClick={() => setIsAdjustModalOpen(true)}
+                          disabled={imageUploading}
+                          className="flex items-center px-4 py-3 bg-surface border border-border rounded-xl text-text-secondary hover:text-accent hover:border-accent transition-colors text-sm whitespace-nowrap"
+                          title="Position and scale image inside the 16:9 frame"
+                        >
+                          <Sliders className="w-4 h-4 mr-2 text-accent" />
+                          Adjust
+                        </button>
+
+                        {/* DELETE BUTTON */}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              coverImage: '',
+                              coverImageSettings: { zoom: 1, x: 50, y: 50, fit: 'contain' },
+                            }))
+                          }
+                          className="flex items-center px-4 py-3 bg-surface border border-border hover:border-red-500/40 text-text-secondary hover:text-red-400 rounded-xl transition-colors text-sm whitespace-nowrap"
+                          title="Delete cover image"
+                        >
+                          <Trash2 className="w-4 h-4 mr-1.5" />
+                          Delete
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
+
+                {/* 16:9 Uncropped Preview */}
                 {formData.coverImage && (
-                  <div className="mt-3 rounded-xl overflow-hidden border border-border h-40">
-                    <img
-                      src={getImageUrl(formData.coverImage)}
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between text-xs text-text-secondary/70 mb-2 px-1">
+                      <span>16:9 Cover Preview</span>
+                      <span className="text-text-secondary/50">Full image preserved by default</span>
+                    </div>
+                    <CoverImage
+                      src={formData.coverImage}
+                      settings={formData.coverImageSettings}
                       alt="Cover preview"
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        setError('Invalid image URL');
-                      }}
+                      className="rounded-xl"
                     />
                   </div>
                 )}
+
+                {/* Crop Modal (Actually crops the image source) */}
+                <ImageCropModal
+                  isOpen={isCropModalOpen}
+                  imageUrl={formData.coverImage}
+                  onClose={() => setIsCropModalOpen(false)}
+                  onSave={(newUrl) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      coverImage: newUrl,
+                      coverImageSettings: { zoom: 1, x: 50, y: 50, fit: 'contain' },
+                    }))
+                  }
+                  api={api}
+                />
+
+                {/* Adjust Modal (Only frames the image in 16:9 container) */}
+                <ImageAdjustModal
+                  isOpen={isAdjustModalOpen}
+                  imageUrl={formData.coverImage}
+                  currentSettings={formData.coverImageSettings}
+                  onClose={() => setIsAdjustModalOpen(false)}
+                  onSave={(newSettings) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      coverImageSettings: newSettings,
+                    }))
+                  }
+                />
               </div>
 
               {/* Content */}

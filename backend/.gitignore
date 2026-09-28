@@ -1,2 +1,10 @@
-.env 
-node_modules 
+.env
+.env.*
+!.env.example
+node_modules/
+uploads/*
+!uploads/.gitkeep
+.vscode/
+npm-debug.log*
+data/
+

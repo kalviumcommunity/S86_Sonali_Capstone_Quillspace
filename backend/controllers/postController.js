@@ -10,7 +10,7 @@ const crypto = require('crypto');
  */
 const createPost = async (req, res, next) => {
   try {
-    const { title, content, tags, coverImage, status } = req.body;
+    const { title, content, tags, coverImage, coverImageSettings, status } = req.body;
 
     // Generate slug and ensure uniqueness
     const baseSlug = (title || '')
@@ -41,6 +41,7 @@ const createPost = async (req, res, next) => {
       author: req.user.id,
       tags: tags || [],
       coverImage: coverImage || '',
+      coverImageSettings: coverImageSettings || { zoom: 1, x: 50, y: 50, fit: 'contain' },
       slug,
       status: status || 'published',
     });
@@ -94,11 +95,20 @@ const getAllPosts = async (req, res, next) => {
       filter.tags = req.query.tag;
     }
 
-    // Search by title or content
+    // Search by title, content, tags, or author name (#8)
     if (req.query.search) {
+      const searchRegex = { $regex: req.query.search, $options: 'i' };
+      const User = require('../models/User');
+      const matchingUsers = await User.find({
+        $or: [{ username: searchRegex }, { name: searchRegex }],
+      }).select('_id');
+      const matchingUserIds = matchingUsers.map((u) => u._id);
+
       filter.$or = [
-        { title: { $regex: req.query.search, $options: 'i' } },
-        { content: { $regex: req.query.search, $options: 'i' } },
+        { title: searchRegex },
+        { content: searchRegex },
+        { tags: searchRegex },
+        ...(matchingUserIds.length > 0 ? [{ author: { $in: matchingUserIds } }] : []),
       ];
     }
 
@@ -305,7 +315,7 @@ const updatePost = async (req, res, next) => {
       return sendError(res, 403, 'Not authorized to update this post');
     }
 
-    const { title, content, tags, coverImage, status } = req.body;
+    const { title, content, tags, coverImage, coverImageSettings, status } = req.body;
 
     // Update fields
     if (title) {
@@ -331,6 +341,7 @@ const updatePost = async (req, res, next) => {
     if (content) post.content = content;
     if (tags) post.tags = tags;
     if (coverImage !== undefined) post.coverImage = coverImage;
+    if (coverImageSettings !== undefined) post.coverImageSettings = coverImageSettings;
     if (status) post.status = status;
 
     await post.save();

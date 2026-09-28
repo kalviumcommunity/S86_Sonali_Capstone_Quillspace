@@ -1,4 +1,6 @@
 import { useNavigate } from 'react-router-dom';
+import { Feather } from 'lucide-react';
+import { FaXTwitter, FaGithub, FaLinkedinIn, FaDiscord } from 'react-icons/fa6';
 
 const Footer = () => {
   const navigate = useNavigate();
@@ -23,10 +25,10 @@ const Footer = () => {
       { label: 'Cookie Policy', href: '#cookies' },
     ],
     Social: [
-      { label: 'Twitter', href: '#twitter', icon: '𝕏' },
-      { label: 'GitHub', href: '#github', icon: '🐙' },
-      { label: 'LinkedIn', href: '#linkedin', icon: '💼' },
-      { label: 'Discord', href: '#discord', icon: '💬' },
+      { label: 'Twitter', href: '#twitter', icon: FaXTwitter },
+      { label: 'GitHub', href: '#github', icon: FaGithub },
+      { label: 'LinkedIn', href: '#linkedin', icon: FaLinkedinIn },
+      { label: 'Discord', href: '#discord', icon: FaDiscord },
     ],
   };
 
@@ -38,7 +40,7 @@ const Footer = () => {
           {/* Brand Column */}
           <div className="lg:col-span-1">
             <div className="flex items-center gap-2 mb-4 cursor-pointer hover:text-accent transition-colors" onClick={() => navigate('/')}>
-              <span className="text-2xl">✒️</span>
+              <Feather className="w-6 h-6 text-accent" />
               <span className="text-lg font-bold text-text">QuillSpace</span>
             </div>
             <p className="text-sm text-text-secondary/70">
@@ -100,17 +102,20 @@ const Footer = () => {
           {/* Social Links */}
           <div>
             <h4 className="font-semibold text-text mb-4">Connect</h4>
-            <div className="flex gap-4">
-              {footerLinks.Social.map((link) => (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  className="text-xl hover:text-accent transition-colors duration-300"
-                  title={link.label}
-                >
-                  {link.icon}
-                </a>
-              ))}
+            <div className="flex gap-3">
+              {footerLinks.Social.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <a
+                    key={item.label}
+                    href={item.href}
+                    className="w-9 h-9 rounded-lg bg-surface border border-border flex items-center justify-center text-text-secondary hover:text-accent hover:border-accent/40 transition-colors duration-300"
+                    title={item.label}
+                  >
+                    <Icon className="w-4 h-4" />
+                  </a>
+                );
+              })}
             </div>
           </div>
         </div>

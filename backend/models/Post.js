@@ -45,6 +45,10 @@ const PostSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    coverImageSettings: {
+      type: mongoose.Schema.Types.Mixed,
+      default: () => ({ zoom: 1, x: 50, y: 50, fit: 'contain' }),
+    },
     likes: [
       {
         type: mongoose.Schema.Types.ObjectId,
