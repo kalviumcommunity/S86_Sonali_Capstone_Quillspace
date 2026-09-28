@@ -2,8 +2,9 @@ import { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 import Navbar from '../components/Navbar';
+import CoverImage from '../components/CoverImage';
 import { AuthContext } from '../context/AuthContext';
-import { getImageUrl } from '../utils/image';
+import { getRelativeTime } from '../utils/date';
 import { FileText, Heart, Bookmark, Link as LinkIcon, Edit3, MessageSquare, Trash2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -203,14 +204,6 @@ const PostDetail = () => {
     }
   };
 
-  const formatDate = (dateStr) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
-
   const isPostOwner = user && post && user._id === post.author?._id;
 
   if (loading) {
@@ -257,16 +250,14 @@ const PostDetail = () => {
           ← Back
         </button>
 
-        {/* Cover Image */}
+        {/* 16:9 Cover Image preserving aspect ratio */}
         {post.coverImage && (
-          <div className="mb-8 rounded-2xl overflow-hidden border border-border">
-            <img
-              src={getImageUrl(post.coverImage)}
-              alt={post.title}
-              className="w-full h-64 sm:h-80 object-cover"
-              onError={(e) => { e.target.style.display = 'none'; }}
-            />
-          </div>
+          <CoverImage
+            src={post.coverImage}
+            settings={post.coverImageSettings}
+            alt={post.title}
+            className="mb-8 rounded-2xl"
+          />
         )}
 
         {/* Tags */}
@@ -301,7 +292,7 @@ const PostDetail = () => {
                 {post.author?.username || 'Unknown'}
               </Link>
               <p className="text-text-secondary text-sm">
-                {formatDate(post.createdAt)}
+                {getRelativeTime(post.createdAt)}
                 {post.views > 0 && <span className="ml-2">· {post.views} views</span>}
               </p>
             </div>
@@ -444,7 +435,7 @@ const PostDetail = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2 mb-1">
                       <span className="font-semibold text-text text-sm">{comment.author?.username || 'Unknown'}</span>
-                      <span className="text-xs text-text-secondary/50 flex-shrink-0">{formatDate(comment.createdAt)}</span>
+                      <span className="text-xs text-text-secondary/50 flex-shrink-0">{getRelativeTime(comment.createdAt)}</span>
                     </div>
                     <p className="text-text-secondary text-sm leading-relaxed break-words">{comment.content}</p>
                   </div>

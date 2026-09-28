@@ -21,6 +21,7 @@ router.post('/', protect, upload.single('image'), (req, res) => {
 
     sendSuccess(res, 200, 'Image uploaded successfully', {
       imageUrl,
+      url: imageUrl,
       filename: req.file.filename,
       size: req.file.size,
     });

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import Button from './Button';
+import { Lock, Zap, Sparkles } from 'lucide-react';
 
 const CTASection = () => {
   const isLoggedIn = !!localStorage.getItem('token');
@@ -85,12 +86,18 @@ const CTASection = () => {
         {/* Trust Badge */}
         <div className="mt-12 sm:mt-16 pt-8 sm:pt-12 border-t border-border/30">
           <p className="text-sm text-text-secondary/70 mb-4">No credit card required • Start free today</p>
-          <div className="flex justify-center items-center gap-4 text-text-secondary text-sm">
-            <span>🔒 Privacy First</span>
-            <span>•</span>
-            <span>⚡ Lightning Fast</span>
-            <span>•</span>
-            <span>✨ Always Free</span>
+          <div className="flex justify-center items-center gap-6 text-text-secondary text-sm flex-wrap">
+            <span className="inline-flex items-center gap-1.5">
+              <Lock className="w-4 h-4 text-accent" /> Privacy First
+            </span>
+            <span className="text-border">•</span>
+            <span className="inline-flex items-center gap-1.5">
+              <Zap className="w-4 h-4 text-accent" /> Lightning Fast
+            </span>
+            <span className="text-border">•</span>
+            <span className="inline-flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4 text-accent" /> Always Free
+            </span>
           </div>
         </div>
       </div>

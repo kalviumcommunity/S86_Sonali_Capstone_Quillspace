@@ -14,24 +14,26 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    // Generate unique filename: timestamp-randomstring-originalname
+    // Generate unique filename: timestamp-randomstring-cleanname
+    const ext = path.extname(file.originalname).toLowerCase();
+    const rawName = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9_-]/g, '_');
+    const safeName = rawName.slice(0, 50) || 'image';
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
-    const name = path.basename(file.originalname, ext);
-    cb(null, `${name}-${uniqueSuffix}${ext}`);
+    cb(null, `${safeName}-${uniqueSuffix}${ext}`);
   },
 });
 
-// File filter - only allow images
+// File filter - only allow image formats (JPG, JPEG, PNG, WEBP, GIF)
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = /jpeg|jpg|png|gif|webp/;
-  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = allowedTypes.test(file.mimetype);
+  const allowedExts = /\.(jpe?g|png|webp|gif)$/i;
+  const allowedMime = /^image\/(jpe?g|png|webp|gif|pjpeg|x-png)$/i;
+  const extname = allowedExts.test(path.extname(file.originalname));
+  const mimetype = allowedMime.test(file.mimetype);
 
   if (extname && mimetype) {
     cb(null, true);
   } else {
-    cb(new Error('Only image files (jpeg, jpg, png, gif, webp) are allowed'), false);
+    cb(new Error('Only image files (JPG, JPEG, PNG, WEBP, GIF) are allowed'), false);
   }
 };
 

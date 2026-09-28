@@ -1,15 +1,15 @@
 /**
- * Utility to resolve relative image paths from the backend.
- * Prepend the backend server domain if the path starts with /uploads
+ * Utility to resolve image paths (external URL, relative uploads, data URLs, blob URLs).
  */
 export const getImageUrl = (url) => {
   if (!url) return '';
   
-  // If it's already a full URL or data URI, return as-is
+  // If it's already a full URL, data URI, or blob URL, return as-is
   if (
     url.startsWith('http://') ||
     url.startsWith('https://') ||
-    url.startsWith('data:')
+    url.startsWith('data:') ||
+    url.startsWith('blob:')
   ) {
     return url;
   }
@@ -20,10 +20,12 @@ export const getImageUrl = (url) => {
   // If VITE_UPLOADS_URL is defined, use it to resolve uploads
   const uploadsBase = import.meta.env.VITE_UPLOADS_URL;
   if (uploadsBase) {
-    // If the path starts with /uploads, replace it or append it to the base URL
-    if (cleanPath.startsWith('/uploads')) {
-      return `${uploadsBase}${cleanPath.replace('/uploads', '')}`;
+    const trimmedBase = uploadsBase.replace(/\/+$/, '');
+    if (cleanPath.startsWith('/uploads/')) {
+      const baseWithoutUploads = trimmedBase.replace(/\/uploads$/, '');
+      return `${baseWithoutUploads}${cleanPath}`;
     }
+    return `${trimmedBase}${cleanPath}`;
   }
 
   // Fallback to checking VITE_API_URL's host origin if set
